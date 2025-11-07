@@ -6,7 +6,7 @@ import { PDFViewer } from "./components/PDFViewer";
 import { Button } from "./components/ui/button";
 import type { User } from "./types";
 
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = "https://pdf-annotation-app.onrender.com";
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User>({
@@ -85,7 +85,7 @@ export default function App() {
             <PDFViewer
               documentId={selectedDoc}
               currentUser={currentUser}
-              backendUrl={BACKEND_URL} // ✅ Pass backend URL
+              backendUrl={BACKEND_URL}
             />
           </>
         ) : (
@@ -94,7 +94,7 @@ export default function App() {
             <div className="lg:col-span-1">
               {currentUser.role === "admin" && (
                 <DocumentUpload
-                  backendUrl={BACKEND_URL} // ✅ Pass backend URL
+                  backendUrl={BACKEND_URL}
                   currentUser={currentUser}
                   onUploadSuccess={fetchDocuments}
                 />
