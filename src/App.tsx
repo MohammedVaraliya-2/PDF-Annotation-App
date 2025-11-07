@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { UserSwitcher } from "./components/UserSwitcher";
-import { DocumentUpload } from "./components/DocumentUpload";
-import { DocumentList } from "./components/DocumentList";
-import { PDFViewer } from "./components/PDFViewer";
-import { Button } from "./components/ui/button";
-import type { User } from "./types";
+import { UserSwitcher } from "@/components/UserSwitcher";
+import { DocumentUpload } from "@/components/DocumentUpload";
+import { DocumentList } from "@/components/DocumentList";
+import { PDFViewer } from "@/components/PDFViewer";
+import { Button } from "@/components/ui/button";
+import type { User } from "@/types";
 
 const BACKEND_URL = "https://pdf-annotation-app.onrender.com";
 

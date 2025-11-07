@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import type { User, Annotation } from "../types";
-import { Card, CardContent } from "./ui/card";
-import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
+import type { User, Annotation } from "@/types";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Document, Page, pdfjs } from "react-pdf";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 

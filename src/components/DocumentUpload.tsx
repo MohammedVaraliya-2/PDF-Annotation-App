@@ -6,8 +6,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "./ui/card";
-import type { User } from "../types";
+} from "@/components/ui/card";
+import type { User } from "@/types";
 
 interface DocumentUploadProps {
   backendUrl: string;
