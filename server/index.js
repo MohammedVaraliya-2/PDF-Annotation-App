@@ -11,7 +11,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+const SERVER_URL = process.env.SERVER_URL;
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME;
 
@@ -47,7 +48,7 @@ function checkPermission(userRole, requiredRoles) {
   return requiredRoles.includes(userRole);
 }
 
-// ==================== DOCUMENT ROUTES ====================
+// DOCUMENT ROUTES
 
 // Upload documents (Admin only)
 app.post("/api/documents/upload", upload.array("files"), async (req, res) => {
@@ -128,7 +129,7 @@ app.get("/api/documents/:id", async (req, res) => {
   }
 });
 
-// ==================== ANNOTATION ROUTES ====================
+// ANNOTATION ROUTES
 
 // Create annotation
 app.post("/api/annotations", async (req, res) => {
@@ -278,6 +279,17 @@ app.get("/health", (req, res) => {
 // Start server
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
+
+    // Self-ping every 3 minutes (180,000 ms)
+    setInterval(async () => {
+      try {
+        console.log("Pinging server to keep it alive...");
+        await axios.get(`${SERVER_URL}/`);
+        console.log("Server pinged successfully.");
+      } catch (err) {
+        console.error("Error pinging server:", err.message);
+      }
+    }, 180000); // 3 minutes
   });
 });
