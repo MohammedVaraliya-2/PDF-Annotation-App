@@ -432,7 +432,7 @@ export function PDFViewer({
       <main className="flex-1 overflow-hidden p-4 md:p-6">
         <div className="max-w-7xl mx-auto h-full flex flex-col lg:flex-row gap-6">
           {/* PDF Viewer Section */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-[3] flex flex-col">
             <Card className="flex-1 flex flex-col shadow-lg border-0 bg-white dark:bg-slate-800 overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -515,14 +515,16 @@ export function PDFViewer({
                         }}
                         data-page-number={index + 1}
                       >
-                        <Page
-                          pageNumber={index + 1}
-                          renderTextLayer={true}
-                          renderAnnotationLayer={false}
-                          scale={1.2}
-                          onClick={(e) => handlePdfClick(e as any, index + 1)}
-                          className="cursor-crosshair"
-                        />
+                        <div className="overflow-x-auto flex justify-center items-center">
+                          <Page
+                            pageNumber={index + 1}
+                            renderTextLayer={true}
+                            renderAnnotationLayer={false}
+                            scale={1.2}
+                            onClick={(e) => handlePdfClick(e as any, index + 1)}
+                            className="cursor-crosshair mx-auto"
+                          />
+                        </div>
 
                         {/* Canvas overlay for drawing */}
                         <canvas
@@ -592,7 +594,7 @@ export function PDFViewer({
                                   <React.Fragment
                                     key={`${ann._id}-${boxIndex}`}
                                   >
-                                    {/* Highlight box */}
+                                    {/* Highlight box - more subtle */}
                                     <div
                                       className="absolute"
                                       style={{
@@ -603,27 +605,10 @@ export function PDFViewer({
                                         backgroundColor: getUserColor(
                                           ann.createdBy
                                         ),
-                                        opacity: 0.5,
+                                        opacity: 0.2, // Reduced opacity for more subtle highlight
                                         pointerEvents: "none",
                                       }}
                                     />
-                                    {/* User tag at the beginning of the highlight */}
-                                    {boxIndex === 0 && (
-                                      <div
-                                        className="absolute text-xs px-2 py-1 rounded font-medium shadow-sm"
-                                        style={{
-                                          left: `${box.left * 100}%`,
-                                          top: `${(box.top - 0.02) * 100}%`, // slightly above
-                                          backgroundColor: getUserColor(
-                                            ann.createdBy
-                                          ),
-                                          color: "#000",
-                                          pointerEvents: "none",
-                                        }}
-                                      >
-                                        {ann.createdBy}
-                                      </div>
-                                    )}
                                   </React.Fragment>
                                 )
                               )}
@@ -744,7 +729,7 @@ export function PDFViewer({
           </div>
 
           {/* Annotation Panel */}
-          <div className="w-full lg:w-96 flex flex-col gap-6">
+          <div className="flex-[1] flex flex-col gap-6">
             {/* Annotation Controls */}
             <Card className="shadow-lg border-0 bg-white dark:bg-slate-800">
               <CardHeader className="pb-3">
