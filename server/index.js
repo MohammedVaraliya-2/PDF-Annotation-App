@@ -200,6 +200,42 @@ app.get("/api/annotations/:documentId", async (req, res) => {
   }
 });
 
+app.get("/api/annotations/single/:id", async (req, res) => {
+  const userId = req.headers["x-user-id"];
+  const userRole = req.headers["x-user-role"];
+
+  try {
+    const annotationId = new ObjectId(req.params.id);
+    const annotation = await db
+      .collection("annotations")
+      .findOne({ _id: annotationId });
+
+    if (!annotation) {
+      return res.status(404).json({ error: "Annotation not found" });
+    }
+
+    // Check if user has permission to view this annotation
+    const isVisible =
+      annotation.visibleTo.includes(userId) ||
+      annotation.visibleTo.includes("A1") ||
+      annotation.visibleTo.includes("D1") ||
+      annotation.visibleTo.includes("D2") ||
+      annotation.visibleTo.includes("R1") ||
+      annotation.createdBy === userId;
+
+    if (!isVisible) {
+      return res
+        .status(403)
+        .json({ error: "No permission to view this annotation" });
+    }
+
+    res.json({ annotation });
+  } catch (err) {
+    console.error("Fetch annotation error:", err);
+    res.status(500).json({ error: "Failed to fetch annotation" });
+  }
+});
+
 // Edit annotation (Admin or owner)
 app.put("/api/annotations/:id", async (req, res) => {
   const userId = req.headers["x-user-id"];
