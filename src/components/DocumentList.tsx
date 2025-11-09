@@ -15,46 +15,44 @@ export function DocumentList({
 }: DocumentListProps) {
   if (!documents || documents.length === 0) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-center text-muted-foreground">
-            No documents uploaded yet.{" "}
+      <div className="flex flex-col items-center justify-center py-12 w-full">
+        <p className="text-center text-gray-500 dark:text-gray-400 text-lg">
+          No documents uploaded yet.
+        </p>
+        {currentUser.role === "admin" && (
+          <p className="mt-2 text-center text-gray-400">
+            Upload a PDF to get started.
           </p>
-          {currentUser.role === "admin" && <p> Upload a PDF to get started.</p>}
-        </CardContent>
-      </Card>
+        )}
+      </div>
     );
   }
 
   return (
-    <div className="grid gap-4">
-      <h2 className="text-xl font-semibold text-foreground">Documents</h2>
-
+    <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
       {documents.map((doc) => (
         <Card
           key={doc._id}
-          className="hover:shadow-md transition-shadow border border-border"
+          className="flex flex-col justify-between hover:shadow-lg transition-shadow duration-200 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 w-full"
         >
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              {/* Document Details */}
-              <div>
-                <h3 className="font-medium text-foreground break-all">
-                  {doc.filename}
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Uploaded by{" "}
-                  <span className="font-medium">{doc.uploadedBy}</span> on{" "}
-                  {new Date(doc.uploadDate).toLocaleDateString()}
+          <CardContent className="flex flex-col gap-3 p-5">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white break-all">
+                {doc.filename}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Uploaded by{" "}
+                <span className="font-medium">{doc.uploadedBy}</span> on{" "}
+                {new Date(doc.uploadDate).toLocaleDateString()}
+              </p>
+              {doc.size && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  Size: {(doc.size / 1024).toFixed(2)} KB
                 </p>
-                {doc.size && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Size: {(doc.size / 1024).toFixed(2)} KB
-                  </p>
-                )}
-              </div>
+              )}
+            </div>
 
-              {/* Action Button */}
+            <div className="mt-4 flex justify-end">
               <Button
                 onClick={() => onSelectDoc(doc._id)}
                 size="sm"

@@ -12,15 +12,12 @@
 </p>
 
 <p align="center">
-  <img src="assets/banner.png" alt="PDF Annotation Banner" width="100%" style="max-height:340px; object-fit:cover; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  <img src="public/pdf_annotation_banner.png" alt="PDF Annotation Banner" width="100%" style="max-height:340px; object-fit:cover; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 </p>
 
 <p align="center">
   <a href="https://pdf-annotation-app.netlify.app" target="_blank">
     <img src="https://img.shields.io/badge/Live%20Demo-Online-success?style=for-the-badge&logo=vercel" alt="Live Demo" />
-  </a>
-  <a href="LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge" alt="License: MIT" />
   </a>
 </p>
 
@@ -83,7 +80,7 @@ PDF Annotation Platform is a web application built with the MERN stack that enab
 
 ```
 
-https://pdf-annotation-backend.onrender.com/api
+https://pdf-annotation-app.onrender.com/api
 
 ```
 
@@ -125,6 +122,46 @@ Features to be implemented or already implemented:
 - [ ] Document versioning
 - [ ] Advanced permission settings
 - [ ] Notification system for new annotations
+
+---
+
+## Screenshots
+
+### PDF Upload and Document List
+
+<p align="center">
+  <img src="public/screenshots/pdf-upload-list.png" alt="PDF Upload and List View" width="100%" style="max-height:400px; object-fit:cover; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+</p>
+<p align="center" style="font-size:0.9rem; color:#666;">
+  Admin interface for uploading PDF documents and viewing the complete document library with metadata
+</p>
+
+### PDF Annotation System
+
+<p align="center">
+  <img src="public/screenshots/pdf-annotation-system.png" alt="PDF Annotation System" width="100%" style="max-height:400px; object-fit:cover; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+</p>
+<p align="center" style="font-size:0.9rem; color:#666;">
+  Interactive PDF viewer with annotation tools, showing different user permission levels
+</p>
+
+### Adding Comments
+
+<p align="center">
+  <img src="public/screenshots/add-comment.png" alt="Adding Comments to PDF" width="100%" style="max-height:400px; object-fit:cover; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+</p>
+<p align="center" style="font-size:0.9rem; color:#666;">
+  Interface for creating text annotations with visibility settings for different user roles
+</p>
+
+### Viewing Annotations (Mobile View)
+
+<p align="center">
+  <img src="public/screenshots/view-annotations.png" alt="Viewing PDF Annotations" width="300" style="border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.15); border:3px solid #f3f4f6;">
+</p>
+<p align="center" style="font-size:0.9rem; color:#666;">
+  Mobile interface displaying annotations with user information and role-based visibility controls
+</p>
 
 ---
 

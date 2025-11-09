@@ -89,31 +89,39 @@ export default function App() {
             />
           </>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* LEFT PANEL: Upload (Admin Only) */}
-            <div className="lg:col-span-1">
+          <div className="w-full max-w-7xl mx-auto px-4 py-8">
+            <div className="bg-white dark:bg-gray-800 shadow-xl rounded-xl p-6 lg:p-8 flex flex-col lg:flex-row gap-6">
+              {/* LEFT PANEL: Upload (Admin Only) */}
               {currentUser.role === "admin" && (
-                <DocumentUpload
-                  backendUrl={BACKEND_URL}
-                  currentUser={currentUser}
-                  onUploadSuccess={fetchDocuments}
-                />
+                <div className="w-full lg:w-1/4">
+                  <DocumentUpload
+                    backendUrl={BACKEND_URL}
+                    currentUser={currentUser}
+                    onUploadSuccess={fetchDocuments}
+                  />
+                </div>
               )}
-            </div>
 
-            {/* RIGHT PANEL: Document List */}
-            <div className="lg:col-span-3">
-              {loadingDocs ? (
-                <p className="text-muted-foreground">Loading documents...</p>
-              ) : error ? (
-                <p className="text-red-500">{error}</p>
-              ) : (
-                <DocumentList
-                  currentUser={currentUser}
-                  documents={documents}
-                  onSelectDoc={setSelectedDoc}
-                />
-              )}
+              {/* RIGHT PANEL: Document List */}
+              <div
+                className={`w-full ${
+                  currentUser.role === "admin" ? "lg:w-3/4" : "lg:w-full"
+                }`}
+              >
+                {loadingDocs ? (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-6">
+                    Loading documents...
+                  </p>
+                ) : error ? (
+                  <p className="text-red-500 text-center py-6">{error}</p>
+                ) : (
+                  <DocumentList
+                    currentUser={currentUser}
+                    documents={documents}
+                    onSelectDoc={setSelectedDoc}
+                  />
+                )}
+              </div>
             </div>
           </div>
         )}
