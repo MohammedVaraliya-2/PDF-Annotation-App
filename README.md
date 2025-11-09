@@ -198,8 +198,8 @@ nodemon index.ts
 
 ## Developer Profile
 
-For more projects and contributions, visit my GitHub profile:
+For more of my recent work, active projects, and open-source contributions, visit my primary GitHub profile:
 
-[![GitHub Profile](https://img.shields.io/badge/GitHub-Mohammed%20Varaliya-blue?style=for-the-badge&logo=github)](https://github.com/Mohammedvaraliya/)
+<p align="center"> <a href="https://github.com/Mohammedvaraliya" target="_blank"> <img src="https://img.shields.io/badge/GitHub-Mohammed%20Varaliya-0A66C2?style=for-the-badge&logo=github" alt="Mohammed Varaliya GitHub Profile" /> </a> </p>
 
 ---
