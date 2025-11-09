@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import axios from "axios";
 import { MongoClient, GridFSBucket, ObjectId } from "mongodb";
 import multer from "multer";
 import path from "path";
@@ -314,9 +315,9 @@ app.delete("/api/annotations/:id", async (req, res) => {
   }
 });
 
-// Health check
+// Health check endpoint
 app.get("/health", (req, res) => {
-  res.json({ status: "Server is running" });
+  res.json({ status: "Server is running", time: new Date().toISOString() });
 });
 
 // Start server
@@ -324,15 +325,17 @@ connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 
-    // Self-ping every 3 minutes (180,000 ms)
+    // Keep-alive ping every 3 minutes (180,000 ms)
+    const PING_INTERVAL = 180000;
+
     setInterval(async () => {
       try {
         console.log("Pinging server to keep it alive...");
-        await axios.get(`${SERVER_URL}/`);
-        console.log("Server pinged successfully.");
+        const res = await axios.get(`${SERVER_URL}/health`);
+        console.log("Server pinged successfully:", res.data.status);
       } catch (err) {
         console.error("Error pinging server:", err.message);
       }
-    }, 180000); // 3 minutes
+    }, PING_INTERVAL);
   });
 });

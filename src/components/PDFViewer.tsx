@@ -18,6 +18,8 @@ import {
   User2,
   FileText,
   Palette,
+  Edit,
+  Trash2,
 } from "lucide-react";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -78,6 +80,12 @@ export function PDFViewer({
     "comment"
   );
 
+  // New state for editing annotation
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState("");
+  const [editedVisibleTo, setEditedVisibleTo] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Function to get a color for a user
   const getUserColor = (userId: string) => {
     // Simple hash function to generate a color based on user ID
@@ -87,6 +95,13 @@ export function PDFViewer({
     }
     const h = hash % 360;
     return `hsl(${h}, 70%, 80%)`;
+  };
+
+  // Check if user can edit/delete annotation
+  const canEditAnnotation = (annotation: Annotation) => {
+    return (
+      currentUser.role === "admin" || annotation.createdBy === currentUser.id
+    );
   };
 
   // Fetch annotations
@@ -404,6 +419,85 @@ export function PDFViewer({
       if (prev.includes(role)) return prev.filter((r) => r !== role);
       return [...prev, role];
     });
+  };
+
+  const toggleEditedVisibilityRole = (role: string) => {
+    setEditedVisibleTo((prev) => {
+      if (prev.includes(role)) return prev.filter((r) => r !== role);
+      return [...prev, role];
+    });
+  };
+
+  // Handle edit annotation
+  const handleEditAnnotation = () => {
+    if (!selectedAnnotation) return;
+    setIsEditing(true);
+    setEditedContent(selectedAnnotation.content || "");
+    setEditedVisibleTo([...selectedAnnotation.visibleTo]);
+  };
+
+  // Handle save edited annotation
+  const handleSaveEditedAnnotation = async () => {
+    if (!selectedAnnotation) return;
+    try {
+      const resp = await fetch(
+        `${backendUrl}/api/annotations/${selectedAnnotation._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": currentUser.id,
+            "x-user-role": currentUser.role,
+          },
+          body: JSON.stringify({
+            content: editedContent,
+            visibleTo: editedVisibleTo,
+          }),
+        }
+      );
+      const data = await resp.json();
+      if (!resp.ok)
+        throw new Error(data.error || "Failed to update annotation");
+      setIsEditing(false);
+      setSelectedAnnotation(null);
+      fetchAnnotations();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to update annotation");
+    }
+  };
+
+  // Handle delete annotation
+  const handleDeleteAnnotation = async () => {
+    if (!selectedAnnotation) return;
+    try {
+      const resp = await fetch(
+        `${backendUrl}/api/annotations/${selectedAnnotation._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "x-user-id": currentUser.id,
+            "x-user-role": currentUser.role,
+          },
+        }
+      );
+      const data = await resp.json();
+      if (!resp.ok)
+        throw new Error(data.error || "Failed to delete annotation");
+      setIsDeleting(false);
+      setSelectedAnnotation(null);
+      fetchAnnotations();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete annotation");
+    }
+  };
+
+  // Reset editing state when closing modal
+  const handleCloseModal = () => {
+    setSelectedAnnotation(null);
+    setIsEditing(false);
+    setIsDeleting(false);
   };
 
   return (
@@ -1021,12 +1115,12 @@ export function PDFViewer({
             <div className="p-6 border-b border-slate-200 dark:border-slate-700">
               <div className="flex justify-between items-start">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                  Annotation Details
+                  {isEditing ? "Edit Annotation" : "Annotation Details"}
                 </h3>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setSelectedAnnotation(null)}
+                  onClick={handleCloseModal}
                   className="h-8 w-8 p-0 rounded-full"
                 >
                   <X className="h-4 w-4" />
@@ -1035,78 +1129,229 @@ export function PDFViewer({
             </div>
 
             <div className="flex-1 overflow-auto p-6 space-y-5">
-              <div className="flex items-center gap-4">
-                <div
-                  className="h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold"
-                  style={{
-                    backgroundColor: getUserColor(selectedAnnotation.createdBy),
-                  }}
-                >
-                  {selectedAnnotation.createdBy.charAt(0)}
-                </div>
-                <div>
-                  <p className="text-lg font-medium text-slate-900 dark:text-white">
-                    {selectedAnnotation.createdBy}
+              {isDeleting ? (
+                <div className="text-center py-8">
+                  <Trash2 className="h-16 w-16 text-red-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+                    Delete Annotation?
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-400 mb-6">
+                    This action cannot be undone. This will permanently delete
+                    the annotation.
                   </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="secondary" className="capitalize">
-                      {selectedAnnotation.type}
-                    </Badge>
-                    <span className="text-sm text-slate-500 dark:text-slate-400">
-                      Page {selectedAnnotation.position?.page ?? "-"}
-                    </span>
+                  <div className="flex gap-3 justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsDeleting(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeleteAnnotation}
+                    >
+                      Delete
+                    </Button>
                   </div>
                 </div>
-              </div>
-
-              {selectedAnnotation.content &&
-                selectedAnnotation.type !== "highlight" && (
-                  <div>
-                    <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
-                      Content
-                    </h4>
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
-                      <p className="text-slate-700 dark:text-slate-300">
-                        {selectedAnnotation.content}
+              ) : isEditing ? (
+                <>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold"
+                      style={{
+                        backgroundColor: getUserColor(
+                          selectedAnnotation.createdBy
+                        ),
+                      }}
+                    >
+                      {selectedAnnotation.createdBy.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-lg font-medium text-slate-900 dark:text-white">
+                        {selectedAnnotation.createdBy}
                       </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="secondary" className="capitalize">
+                          {selectedAnnotation.type}
+                        </Badge>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">
+                          Page {selectedAnnotation.position?.page ?? "-"}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                )}
 
-              {selectedAnnotation.type === "highlight" && (
-                <div>
-                  <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
-                    Highlight
-                  </h4>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
-                    <p className="text-slate-700 dark:text-slate-300">
-                      Text highlighted by {selectedAnnotation.createdBy}
-                    </p>
+                  {selectedAnnotation.type !== "highlight" && (
+                    <div>
+                      <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
+                        Content
+                      </h4>
+                      <Textarea
+                        value={editedContent}
+                        onChange={(e) => setEditedContent(e.target.value)}
+                        className="text-sm"
+                        placeholder="Add a comment..."
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
+                      Visible To
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {["A1", "D1", "D2", "R1"].map((r) => (
+                        <label
+                          key={r}
+                          className="inline-flex items-center gap-1.5 text-sm cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={editedVisibleTo.includes(r)}
+                            onChange={() => toggleEditedVisibilityRole(r)}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <span className="text-slate-700 dark:text-slate-300">
+                            {r}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold"
+                      style={{
+                        backgroundColor: getUserColor(
+                          selectedAnnotation.createdBy
+                        ),
+                      }}
+                    >
+                      {selectedAnnotation.createdBy.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-lg font-medium text-slate-900 dark:text-white">
+                        {selectedAnnotation.createdBy}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="secondary" className="capitalize">
+                          {selectedAnnotation.type}
+                        </Badge>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">
+                          Page {selectedAnnotation.position?.page ?? "-"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-              <div>
-                <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
-                  Visible To
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedAnnotation.visibleTo?.map((role) => (
-                    <Badge key={role} variant="outline" className="text-xs">
-                      {role}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+                  {selectedAnnotation.content &&
+                    selectedAnnotation.type !== "highlight" && (
+                      <div>
+                        <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
+                          Content
+                        </h4>
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
+                          <p className="text-slate-700 dark:text-slate-300">
+                            {selectedAnnotation.content}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                  {selectedAnnotation.type === "highlight" && (
+                    <div>
+                      <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
+                        Highlight
+                      </h4>
+                      <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
+                        <p className="text-slate-700 dark:text-slate-300">
+                          Text highlighted by {selectedAnnotation.createdBy}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
+                      Visible To
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedAnnotation.visibleTo?.map((role) => (
+                        <Badge key={role} variant="outline" className="text-xs">
+                          {role}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="p-6 border-t border-slate-200 dark:border-slate-700">
-              <Button
-                onClick={() => setSelectedAnnotation(null)}
-                className="w-full"
-              >
-                Close
-              </Button>
+              {isEditing ? (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditing(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveEditedAnnotation}
+                    className="flex-1 gap-1"
+                  >
+                    <Save className="h-4 w-4" />
+                    Save Changes
+                  </Button>
+                </div>
+              ) : isDeleting ? (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsDeleting(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteAnnotation}
+                    className="flex-1"
+                  >
+                    Delete
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  {canEditAnnotation(selectedAnnotation) && (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsDeleting(true)}
+                        className="flex-1 gap-1"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </Button>
+                      <Button
+                        onClick={handleEditAnnotation}
+                        className="flex-1 gap-1"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit
+                      </Button>
+                    </>
+                  )}
+                  <Button onClick={handleCloseModal} className="flex-1">
+                    Close
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
