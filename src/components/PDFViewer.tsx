@@ -150,20 +150,29 @@ export function PDFViewer({
   const handleTextSelection = () => {
     try {
       const sel = window.getSelection();
-      if (!sel || sel.toString().trim().length === 0) {
+      if (!sel || sel.rangeCount === 0) {
         setSelectedText(null);
         return;
       }
 
       const text = sel.toString().trim();
-      const range = sel.getRangeAt(0);
-      const rects = range.getClientRects();
+      if (text.length === 0) {
+        setSelectedText(null);
+        return;
+      }
 
-      // Find the page element that contains the selection
-      const pageElement =
-        range.commonAncestorContainer.parentElement?.closest(
-          ".pdf-page-wrapper"
-        );
+      const range = sel.getRangeAt(0);
+
+      // Only allow selection from PDF text layer
+      const textLayer = (range.commonAncestorContainer as HTMLElement).closest(
+        ".react-pdf__Page__textContent"
+      );
+      if (!textLayer) {
+        setSelectedText(null);
+        return;
+      }
+
+      const pageElement = textLayer.closest(".pdf-page-wrapper");
       if (!pageElement) {
         setSelectedText(null);
         return;
@@ -175,7 +184,7 @@ export function PDFViewer({
       );
       const pageRect = pageElement.getBoundingClientRect();
 
-      // Convert each rect to relative coordinates (0-1)
+      const rects = range.getClientRects();
       const boundingBoxes: BoundingBox[] = Array.from(rects).map((rect) => ({
         left: (rect.left - pageRect.left) / pageRect.width,
         top: (rect.top - pageRect.top) / pageRect.height,
@@ -183,11 +192,15 @@ export function PDFViewer({
         height: rect.height / pageRect.height,
       }));
 
-      setSelectedText({
-        text,
-        page: pageNumber,
-        boundingBoxes,
-      });
+      if (boundingBoxes.length > 0) {
+        setSelectedText({
+          text,
+          page: pageNumber,
+          boundingBoxes,
+        });
+      } else {
+        setSelectedText(null);
+      }
     } catch (err) {
       console.error(err);
       setSelectedText(null);
@@ -238,7 +251,7 @@ export function PDFViewer({
         body: JSON.stringify({
           documentId,
           type: "highlight",
-          content: selectedText.text,
+          // Don't save the highlighted text content
           position: {
             page: selectedText.page,
             boundingBoxes: selectedText.boundingBoxes,
@@ -428,13 +441,14 @@ export function PDFViewer({
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-hidden p-4 md:p-6">
-        <div className="max-w-7xl mx-auto h-full flex flex-col lg:flex-row gap-6">
+      {/* Main Content - Responsive Design */}
+      <main className="flex-1 overflow-auto p-2 sm:p-4 md:p-6">
+        <div className="max-w-7xl mx-auto h-full flex flex-col lg:flex-row gap-4 md:gap-6">
           {/* PDF Viewer Section */}
-          <div className="flex-[3] flex flex-col">
+          <div className="w-full lg:w-2/3 flex flex-col min-h-[70vh] md:min-h-[75vh] lg:min-h-[80vh]">
             <Card className="flex-1 flex flex-col shadow-lg border-0 bg-white dark:bg-slate-800 overflow-hidden">
-              <CardHeader className="pb-3">
+              {/* Sticky Header */}
+              <CardHeader className="pb-3 flex-shrink-0 sticky top-0 bg-white dark:bg-slate-800 z-10 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                     <FileText className="h-5 w-5" />
@@ -482,9 +496,16 @@ export function PDFViewer({
                 </div>
               </CardHeader>
 
-              <CardContent className="flex-1 p-0 overflow-auto">
+              {/* Scrollable PDF Content */}
+              <CardContent
+                className="flex-1 p-0 overflow-y-auto relative"
+                style={{
+                  minHeight: "60vh", // minimum height on small screens
+                  maxHeight: "calc(100vh - 100px)", // make it scrollable in mobile/tablet
+                }}
+              >
                 <div
-                  className="relative select-text"
+                  className="relative select-text p-4"
                   onMouseUp={() => {
                     setTimeout(handleTextSelection, 10);
                   }}
@@ -507,22 +528,24 @@ export function PDFViewer({
                     {Array.from({ length: numPages }, (_, index) => (
                       <div
                         key={index}
-                        className="pdf-page-wrapper relative mb-6 bg-white dark:bg-slate-700 shadow-md rounded-lg overflow-hidden"
+                        className="pdf-page-wrapper relative mb-6 bg-white dark:bg-slate-700 shadow-md rounded-lg overflow-hidden mx-auto"
                         style={{
-                          display: "inline-block",
+                          display: "block",
                           position: "relative",
                           width: "100%",
+                          maxWidth: "min(900px, 100%)",
                         }}
                         data-page-number={index + 1}
                       >
-                        <div className="overflow-x-auto flex justify-center items-center">
+                        <div className="relative flex justify-center w-full">
                           <Page
                             pageNumber={index + 1}
                             renderTextLayer={true}
                             renderAnnotationLayer={false}
                             scale={1.2}
+                            width={Math.min(800, window.innerWidth - 100)}
+                            className="cursor-crosshair w-full"
                             onClick={(e) => handlePdfClick(e as any, index + 1)}
-                            className="cursor-crosshair mx-auto"
                           />
                         </div>
 
@@ -534,13 +557,10 @@ export function PDFViewer({
                           className="absolute top-0 left-0 w-full h-full"
                           style={{
                             pointerEvents: drawingMode ? "auto" : "none",
+                            zIndex: drawingMode ? 20 : 5,
                           }}
-                          onMouseDown={(e) => {
-                            startDrawing(e as any, index + 1);
-                          }}
-                          onMouseMove={(e) => {
-                            draw(e as any, index + 1);
-                          }}
+                          onMouseDown={(e) => startDrawing(e as any, index + 1)}
+                          onMouseMove={(e) => draw(e as any, index + 1)}
                           onMouseUp={() => stopDrawing(index + 1)}
                           onMouseLeave={() => {
                             if (isDrawing) stopDrawing(index + 1);
@@ -571,7 +591,7 @@ export function PDFViewer({
                             </div>
                           ))}
 
-                        {/* Render highlights using bounding boxes with user colors */}
+                        {/* Render highlights with user labels */}
                         {annotations
                           .filter(
                             (a) =>
@@ -594,7 +614,7 @@ export function PDFViewer({
                                   <React.Fragment
                                     key={`${ann._id}-${boxIndex}`}
                                   >
-                                    {/* Highlight box - more subtle */}
+                                    {/* Highlight box */}
                                     <div
                                       className="absolute"
                                       style={{
@@ -605,10 +625,30 @@ export function PDFViewer({
                                         backgroundColor: getUserColor(
                                           ann.createdBy
                                         ),
-                                        opacity: 0.2, // Reduced opacity for more subtle highlight
+                                        opacity: 0.2,
                                         pointerEvents: "none",
                                       }}
                                     />
+                                    {/* User label at the left of the highlight */}
+                                    <div
+                                      className="absolute flex items-center justify-center rounded-full text-xs font-bold text-white shadow-md"
+                                      style={{
+                                        left: `${(box.left - 0.02) * 100}%`,
+                                        top: `${
+                                          (box.top + box.height / 2) * 100
+                                        }%`,
+                                        transform: "translate(-50%, -50%)",
+                                        backgroundColor: getUserColor(
+                                          ann.createdBy
+                                        ),
+                                        width: "20px",
+                                        height: "20px",
+                                        zIndex: 15,
+                                      }}
+                                      title={`${ann.createdBy} highlighted this text`}
+                                    >
+                                      {ann.createdBy.charAt(0)}
+                                    </div>
                                   </React.Fragment>
                                 )
                               )}
@@ -689,15 +729,9 @@ export function PDFViewer({
                                   Save Highlight
                                 </h4>
                               </div>
-                              <Textarea
-                                className="text-sm mb-3"
-                                placeholder="Selected text..."
-                                value={selectedText.text}
-                                onChange={(e) =>
-                                  setNewAnnotation(e.target.value)
-                                }
-                                disabled
-                              />
+                              <div className="text-sm mb-3 p-2 bg-slate-100 dark:bg-slate-700 rounded">
+                                {selectedText.text}
+                              </div>
                               <div className="flex gap-2">
                                 <Button
                                   onClick={handleAddHighlight}
@@ -728,10 +762,10 @@ export function PDFViewer({
             </Card>
           </div>
 
-          {/* Annotation Panel */}
-          <div className="flex-[1] flex flex-col gap-6">
+          {/* Annotation Panel - Responsive */}
+          <div className="w-full lg:w-1/3 flex flex-col gap-4 md:gap-6 min-h-0">
             {/* Annotation Controls */}
-            <Card className="shadow-lg border-0 bg-white dark:bg-slate-800">
+            <Card className="shadow-lg border-0 bg-white dark:bg-slate-800 flex-shrink-0">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                   <Palette className="h-5 w-5" />
@@ -803,16 +837,16 @@ export function PDFViewer({
             </Card>
 
             {/* Annotations List */}
-            <Card className="flex-1 shadow-lg border-0 bg-white dark:bg-slate-800 flex flex-col">
-              <CardHeader className="pb-3">
+            <Card className="shadow-lg border-0 bg-white dark:bg-slate-800 flex flex-col flex-1 lg:flex-initial lg:h-[500px] min-h-[400px]">
+              <CardHeader className="pb-3 flex-shrink-0">
                 <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                   <FileText className="h-5 w-5" />
                   Annotations
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 overflow-auto p-0">
+              <CardContent className="flex-1 overflow-hidden p-0 flex flex-col min-h-0">
                 <Tabs defaultValue="all" className="h-full flex flex-col">
-                  <TabsList className="grid w-full grid-cols-3 mb-2">
+                  <TabsList className="grid w-full grid-cols-3 mb-0 flex-shrink-0 mx-2 mt-2">
                     <TabsTrigger value="all" className="text-xs">
                       All
                     </TabsTrigger>
@@ -824,7 +858,7 @@ export function PDFViewer({
                     </TabsTrigger>
                   </TabsList>
 
-                  <div className="flex-1 overflow-auto p-2">
+                  <div className="flex-1 overflow-y-auto px-2 pb-2 min-h-0">
                     <TabsContent value="all" className="mt-0 space-y-3">
                       {loading ? (
                         <div className="flex items-center justify-center h-32">
@@ -963,11 +997,12 @@ export function PDFViewer({
                               </div>
                             </div>
 
-                            {ann.content && (
-                              <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 line-clamp-2">
-                                {ann.content}
-                              </p>
-                            )}
+                            <div className="mt-2 text-sm text-slate-700 dark:text-slate-300">
+                              <div className="flex items-center gap-1">
+                                <Highlighter className="h-3 w-3" />
+                                <span>Text highlighted by user</span>
+                              </div>
+                            </div>
                           </div>
                         ))}
                     </TabsContent>
@@ -1024,14 +1059,28 @@ export function PDFViewer({
                 </div>
               </div>
 
-              {selectedAnnotation.content && (
+              {selectedAnnotation.content &&
+                selectedAnnotation.type !== "highlight" && (
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
+                      Content
+                    </h4>
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
+                      <p className="text-slate-700 dark:text-slate-300">
+                        {selectedAnnotation.content}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {selectedAnnotation.type === "highlight" && (
                 <div>
                   <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
-                    Content
+                    Highlight
                   </h4>
                   <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg">
                     <p className="text-slate-700 dark:text-slate-300">
-                      {selectedAnnotation.content}
+                      Text highlighted by {selectedAnnotation.createdBy}
                     </p>
                   </div>
                 </div>

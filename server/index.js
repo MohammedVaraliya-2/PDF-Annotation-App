@@ -118,13 +118,20 @@ app.get("/api/documents/:id", async (req, res) => {
     const fileId = new ObjectId(req.params.id);
     const downloadStream = gfs.openDownloadStream(fileId);
 
-    downloadStream.on("error", () => {
-      res.status(404).json({ error: "File not found" });
+    // Handle stream errors
+    downloadStream.on("error", (err) => {
+      console.error("Error streaming file:", err);
+      return res.status(404).json({ error: "File not found" });
     });
 
+    // Set correct headers for inline PDF viewing
     res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'inline; filename="document.pdf"');
+
+    // Pipe file to response
     downloadStream.pipe(res);
   } catch (err) {
+    console.error("Error retrieving document:", err);
     res.status(500).json({ error: "Failed to download document" });
   }
 });

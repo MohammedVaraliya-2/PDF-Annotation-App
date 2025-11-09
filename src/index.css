@@ -164,3 +164,16 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Make sure the invisible text layer stays above the page canvas */
+.react-pdf__Page__textContent {
+  opacity: 0 !important;
+  pointer-events: auto !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 10 !important; /* above canvas, below annotations */
+}
+
+.react-pdf__Page__textContent span {
+  color: transparent !important;
+}

@@ -6,7 +6,7 @@ import { PDFViewer } from "@/components/PDFViewer";
 import { Button } from "@/components/ui/button";
 import type { User } from "@/types";
 
-const BACKEND_URL = "https://pdf-annotation-app.onrender.com";
+const BACKEND_URL = "http://localhost:5000";
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User>({
@@ -71,7 +71,7 @@ export default function App() {
       </header>
 
       {/* MAIN CONTENT */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="lg:max-w-3/4 mx-auto px-4 py-8">
         {selectedDoc ? (
           <>
             <Button
