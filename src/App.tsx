@@ -6,7 +6,7 @@ import { PDFViewer } from "@/components/PDFViewer";
 import { Button } from "@/components/ui/button";
 import type { User } from "@/types";
 
-const BACKEND_URL = "https://pdf-annotation-app-backend.onrender.com";
+const BACKEND_URL = "https://pdf-annotation-app.onrender.com";
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User>({
